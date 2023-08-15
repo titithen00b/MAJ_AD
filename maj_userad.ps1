@@ -1,9 +1,53 @@
+<#
+.SYNOPSIS
+Mise à jour des attributs des utilisateurs Active Directory à partir d'un fichier CSV.
+
+.DESCRIPTION
+Ce script lit un fichier CSV contenant des attributs d'utilisateurs et met à jour les utilisateurs correspondants dans Active Directory. 
+Si un attribut est vide dans le CSV, il sera vidé (nettoyé) dans Active Directory.
+
+.PARAMETER csvPath
+Chemin d'accès complet du fichier CSV. Par défaut, il est défini sur "C:\Utilisateurs.csv".
+
+.PARAMETER debug
+Active ou désactive le mode de débogage. Si défini sur 1, le débogage est activé et des informations supplémentaires seront affichées.
+Si défini sur 0, le débogage est désactivé. Par défaut, il est défini sur 1.
+
+.EXAMPLE
+.\Mise a jour utilisateurs AD.ps1
+
+Exécute le script en utilisant le chemin par défaut "C:\Utilisateurs.csv" et en mode débogage.
+
+.EXAMPLE
+.\Mise a jour utilisateurs AD.ps1 -csvPath "D:\Dossier\MonFichier.csv" -debug 0
+
+Exécute le script en utilisant le fichier CSV spécifié et en désactivant le mode de débogage.
+
+.NOTES
+Nom du fichier : Mise a jour utilisateurs AD.ps1
+Auteur : Valentin Roche
+Date de création : 15/08/2023
+Dernière mise à jour : 15/08/2023
+
+#>
+
 # Importer le module ActiveDirectory
 Import-Module ActiveDirectory
 
-# Variables
-$csvPath = "C:\Utilisateurs.csv"
-$debug = 1  # Changez cette valeur à 0 pour désactiver le débogage
+# Paramètres du script
+
+[string]$csvPath
+[int]$debug
+
+# Initialiser les variables avec des valeurs par défaut
+if (-not $csvPath) {
+    $csvPath = "C:\Utilisateurs.csv"
+}
+
+if (-not $debug) {
+    $debug = 1
+}
+
 
 # Fonction pour afficher les messages de débogage
 function Write-DebugMessage {
