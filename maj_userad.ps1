@@ -1,3 +1,6 @@
+# Importer le module ActiveDirectory
+Import-Module ActiveDirectory
+
 # Variables
 $csvPath = "C:\Utilisateurs.csv"
 $debug = 1  # Changez cette valeur à 0 pour désactiver le débogage
@@ -22,7 +25,7 @@ $adUsers = Get-ADUser -Filter * -Properties SamAccountName, streetAddress, l, po
 
 # Parcourir chaque utilisateur dans le CSV
 foreach ($user in $users) {
-
+    Write-Host "" # Pour sauter une ligne entre chaque utilisateur
     Write-DebugMessage "Traitement de l'utilisateur $($user.SamAccountName)"
 
     # Utilisez Where-Object pour filtrer l'utilisateur correspondant
@@ -31,21 +34,58 @@ foreach ($user in $users) {
     if ($adUser) {
         Write-DebugMessage "Utilisateur trouvé dans AD : $($adUser.SamAccountName)"
 
-        # Créez un tableau pour contenir les paramètres de Set-ADUser
-        $params = @{
+        $paramsToUpdate = @{
             'Identity' = $adUser.SamAccountName
         }
 
-        if ($user.Adresse) { $params['StreetAddress'] = $user.Adresse }
-        if ($user.Ville) { $params['City'] = $user.Ville }
-        if ($user.CodePostal) { $params['PostalCode'] = $user.CodePostal }
-        if ($user.Fonction) { $params['Title'] = $user.Fonction }
-        if ($user.Servi) { $params['Department'] = $user.Servi }
-        if ($user.Societe) { $params['Company'] = $user.Societe }
+        $paramsToClear = @()
 
-        # Essayez de mettre à jour l'utilisateur
+        # Mise à jour ou suppression des attributs selon la présence de la valeur dans le CSV
+        if ($user.Adresse) {
+            $paramsToUpdate['StreetAddress'] = $user.Adresse
+        } else {
+            $paramsToClear += 'StreetAddress'
+        }
+
+        if ($user.Ville) {
+            $paramsToUpdate['City'] = $user.Ville
+        } else {
+            $paramsToClear += 'City'
+        }
+
+        if ($user.CodePostal) {
+            $paramsToUpdate['PostalCode'] = $user.CodePostal
+        } else {
+            $paramsToClear += 'PostalCode'
+        }
+
+        if ($user.Fonction) {
+            $paramsToUpdate['Title'] = $user.Fonction
+        } else {
+            $paramsToClear += 'Title'
+        }
+
+        if ($user.Service) {
+            $paramsToUpdate['Department'] = $user.Service
+        } else {
+            $paramsToClear += 'Department'
+        }
+
+        if ($user.Societe) {
+            $paramsToUpdate['Company'] = $user.Societe
+        } else {
+            $paramsToClear += 'Company'
+        }
+
+        # Mise à jour de l'utilisateur
         try {
-            Set-ADUser @params
+            Set-ADUser @paramsToUpdate
+
+            # Nettoyer (supprimer) les attributs si nécessaire
+            foreach ($param in $paramsToClear) {
+                Set-ADUser -Identity $adUser.SamAccountName -Clear $param
+            }
+            
             Write-DebugMessage "Mise à jour de l'utilisateur $($adUser.SamAccountName) réussie."
         } catch {
             Write-Host "Erreur lors de la mise à jour de l'utilisateur $($adUser.SamAccountName) : $($_.Exception.Message)"
